@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Prisma
+# Migrations ARE committed (they're the versioned source of truth for the
+# schema) — only the generated client output is ignored, and that already
+# lives in node_modules/@prisma/client, which is covered above.
+
+# Misc
+*.tsbuildinfo
+.eslintcache

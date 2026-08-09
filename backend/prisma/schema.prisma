@@ -1,0 +1,410 @@
+// ============================================================================
+// Trevolk AI Workforce — Prisma Schema (Phase 2: Database Layer)
+// SQLite-compatible version (no native enums, no native JSON)
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// TENANCY & ACCESS
+// ============================================================================
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  industry    String?
+  status      String   @default("ACTIVE")
+  ownerUserId String   @map("owner_user_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  owner      User        @relation("OrganizationOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+  workspaces Workspace[]
+
+  @@index([ownerUserId])
+  @@map("organizations")
+}
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  name           String?
+  authProviderId String?  @unique @map("auth_provider_id")
+  avatarUrl      String?  @map("avatar_url")
+  status         String   @default("ACTIVE")
+
+  // Phase 3 — Authentication. Nullable so existing/future users provisioned
+  // through a managed auth provider (authProviderId) are not required to
+  // carry a locally-hashed password.
+  passwordHash String?   @map("password_hash")
+  lastLoginAt  DateTime? @map("last_login_at")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  ownedOrganizations  Organization[]    @relation("OrganizationOwner")
+  workspaceMemberships WorkspaceMember[]
+  notifications       Notification[]
+  refreshTokens        RefreshToken[]
+
+  assignedLeads         Lead[]            @relation("LeadAssignedUser")
+  assignedConversations Conversation[]    @relation("ConversationAssignedUser")
+  uploadedDocuments      Document[]        @relation("DocumentUploadedBy")
+  connectedIntegrations  Integration[]     @relation("IntegrationConnectedBy")
+
+  @@map("users")
+}
+
+// ============================================================================
+// AUTHENTICATION (Phase 3)
+// ============================================================================
+
+/// Persisted refresh-token sessions, enabling server-side revocation
+/// (logout, token rotation) on top of otherwise-stateless JWT access
+/// tokens. One row per issued refresh token; `id` doubles as the token's
+/// `jti` claim so a presented token can be looked up and validated without
+/// storing the raw token value itself.
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model Workspace {
+  id                  String   @id @default(uuid())
+  organizationId      String   @map("organization_id")
+  name                String
+  industry            String?
+  branding            String?
+  defaultWorkingHours String?  @map("default_working_hours")
+  timezone            String   @default("UTC")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  members             WorkspaceMember[]
+  aiEmployees         AIEmployee[]
+  customers           Customer[]
+  leads               Lead[]
+  conversations       Conversation[]
+  appointments        Appointment[]
+  knowledgeBaseEntries KnowledgeBaseEntry[]
+  documents           Document[]
+  integrations        Integration[]
+  notifications       Notification[]
+
+  @@index([organizationId])
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  workspaceId String   @map("workspace_id")
+  role        String   @default("TEAM_MEMBER")
+  invitedAt   DateTime @default(now()) @map("invited_at")
+  acceptedAt  DateTime? @map("accepted_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId])
+  @@map("workspace_members")
+}
+
+// ============================================================================
+// AI EMPLOYEES
+// ============================================================================
+
+model AIEmployee {
+  id            String   @id @default(uuid())
+  workspaceId   String   @map("workspace_id")
+  employeeType  String   @map("employee_type")
+  name          String
+  description   String?
+  status        String   @default("NEEDS_SETUP")
+  configuration String   @default("{}")
+  lastActiveAt  DateTime? @map("last_active_at")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+
+  leads         Lead[]
+  conversations Conversation[]
+  appointments  Appointment[]
+
+  @@unique([workspaceId, employeeType])
+  @@index([workspaceId])
+  @@map("ai_employees")
+}
+
+// ============================================================================
+// CUSTOMERS & LEADS
+// ============================================================================
+
+model Customer {
+  id              String    @id @default(uuid())
+  workspaceId     String    @map("workspace_id")
+  name            String?
+  email           String?
+  phone           String?
+  sourceChannel   String?   @map("source_channel")
+  firstContactAt  DateTime? @map("first_contact_at")
+  tags            String?
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+
+  lead          Lead?
+  conversations Conversation[]
+  appointments  Appointment[]
+
+  @@index([workspaceId])
+  @@index([workspaceId, email])
+  @@map("customers")
+}
+
+model Lead {
+  id                   String   @id @default(uuid())
+  workspaceId          String   @map("workspace_id")
+  aiEmployeeId         String?  @map("ai_employee_id")
+  customerId           String?  @unique @map("customer_id")
+  status               String   @default("NEW")
+  score                String?
+  qualificationAnswers String?  @map("qualification_answers")
+  source               String?
+  assignedUserId       String?  @map("assigned_user_id")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  workspace  Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  aiEmployee AIEmployee? @relation(fields: [aiEmployeeId], references: [id], onDelete: SetNull)
+  customer   Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  assignedUser User?     @relation("LeadAssignedUser", fields: [assignedUserId], references: [id], onDelete: SetNull)
+
+  conversations Conversation[]
+  appointments  Appointment[]
+
+  @@index([workspaceId, status])
+  @@index([aiEmployeeId])
+  @@map("leads")
+}
+
+// ============================================================================
+// CONVERSATIONS & MESSAGES
+// ============================================================================
+
+model Conversation {
+  id            String   @id @default(uuid())
+  workspaceId   String   @map("workspace_id")
+  customerId    String?  @map("customer_id")
+  leadId        String?  @map("lead_id")
+  aiEmployeeId  String?  @map("ai_employee_id")
+  integrationId String?  @map("integration_id")
+  channel       String
+  status        String   @default("OPEN")
+  assignedUserId String? @map("assigned_user_id")
+  lastMessageAt DateTime? @map("last_message_at")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  customer     Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  lead         Lead?        @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  aiEmployee   AIEmployee?  @relation(fields: [aiEmployeeId], references: [id], onDelete: SetNull)
+  integration  Integration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+  assignedUser User?        @relation("ConversationAssignedUser", fields: [assignedUserId], references: [id], onDelete: SetNull)
+
+  messages Message[]
+
+  @@index([workspaceId, status, lastMessageAt])
+  @@index([customerId])
+  @@index([leadId])
+  @@index([aiEmployeeId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String   @map("conversation_id")
+  senderType     String   @map("sender_type")
+  senderId       String?  @map("sender_id")
+  content        String
+  messageType    String   @default("TEXT") @map("message_type")
+  metadata       String?
+  isInternalNote Boolean  @default(false) @map("is_internal_note")
+  sentAt         DateTime @default(now()) @map("sent_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, sentAt])
+  @@map("messages")
+}
+
+// ============================================================================
+// APPOINTMENTS
+// ============================================================================
+
+model Appointment {
+  id                  String   @id @default(uuid())
+  workspaceId         String   @map("workspace_id")
+  customerId          String   @map("customer_id")
+  leadId              String?  @map("lead_id")
+  aiEmployeeId        String   @map("ai_employee_id")
+  integrationId       String?  @map("integration_id")
+  startTime           DateTime @map("start_time")
+  endTime             DateTime @map("end_time")
+  status              String   @default("SCHEDULED")
+  externalCalendarRef String?  @map("external_calendar_ref")
+  reminderSentAt      DateTime? @map("reminder_sent_at")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  customer    Customer     @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  lead        Lead?        @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  aiEmployee  AIEmployee   @relation(fields: [aiEmployeeId], references: [id], onDelete: Restrict)
+  integration Integration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, startTime])
+  @@index([customerId])
+  @@map("appointments")
+}
+
+// ============================================================================
+// KNOWLEDGE BASE
+// ============================================================================
+
+model KnowledgeBaseEntry {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  type        String
+  title       String
+  content     String?
+  documentId  String?  @map("document_id")
+  syncStatus  String   @default("SYNCED") @map("sync_status")
+  isActive    Boolean  @default(true) @map("is_active")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  document  Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, isActive])
+  @@map("knowledge_base_entries")
+}
+
+model Document {
+  id                 String   @id @default(uuid())
+  workspaceId        String   @map("workspace_id")
+  fileName           String   @map("file_name")
+  fileUrl            String   @map("file_url")
+  fileType           String?  @map("file_type")
+  uploadedByUserId   String?  @map("uploaded_by_user_id")
+  processingStatus   String   @default("PENDING") @map("processing_status")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  workspace      Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  uploadedByUser User?                @relation("DocumentUploadedBy", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+  knowledgeBaseEntries KnowledgeBaseEntry[]
+
+  @@index([workspaceId])
+  @@map("documents")
+}
+
+// ============================================================================
+// INTEGRATIONS
+// ============================================================================
+
+model Integration {
+  id                   String   @id @default(uuid())
+  workspaceId          String   @map("workspace_id")
+  provider             String
+  status               String   @default("DISCONNECTED")
+  credentialsEncrypted String?  @map("credentials_encrypted")
+  metadata             String?
+  connectedByUserId    String?  @map("connected_by_user_id")
+  lastSyncedAt         DateTime? @map("last_synced_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  workspace         Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  connectedByUser   User?          @relation("IntegrationConnectedBy", fields: [connectedByUserId], references: [id], onDelete: SetNull)
+
+  conversations Conversation[]
+  appointments  Appointment[]
+
+  @@unique([workspaceId, provider])
+  @@index([workspaceId, status])
+  @@map("integrations")
+}
+
+// ============================================================================
+// NOTIFICATIONS
+// ============================================================================
+
+model Notification {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  userId      String   @map("user_id")
+  type        String
+  title       String
+  message     String
+  payload     String?
+  readAt      DateTime? @map("read_at")
+  sentVia     String   @default("IN_APP") @map("sent_via")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, userId, readAt])
+  @@map("notifications")
+}
