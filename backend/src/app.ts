@@ -1,4 +1,9 @@
-import { errorHandlerMiddleware, notFoundMiddleware, requestId } from '@common/middlewares';
+import {
+  errorHandlerMiddleware,
+  notFoundMiddleware,
+  requestId,
+  sanitizeInputsMiddleware,
+} from '@common/middlewares';
 import { appConfig } from '@config/index';
 import { v1Router } from '@routes/index';
 import { httpLogger } from '@shared/logger';
@@ -9,22 +14,42 @@ import helmet from 'helmet';
 
 /**
  * Builds and configures the Express application.
- *
- * Kept separate from `server.ts` so the app instance can be imported
- * directly in tests (e.g., with supertest) without binding a real port.
  */
 export function createApp(): Application {
   const app = express();
 
-  // Trust the first proxy hop (load balancer / reverse proxy in production)
-  // so `req.ip` and `req.secure` reflect the real client, not the proxy.
+  // Disable x-powered-by header
+  app.disable('x-powered-by');
+
+  // Trust the first proxy hop
   app.set('trust proxy', 1);
 
   // --- Request correlation --------------------------------------------
   app.use(requestId);
 
   // --- Security ----------------------------------------------------------
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'", 'https:'],
+          imgSrc: ["'self'", 'data:', 'https:'],
+          connectSrc: ["'self'", 'wss:', 'https:'],
+          fontSrc: ["'self'", 'https:', 'data:'],
+          objectSrc: ["'none'"],
+          mediaSrc: ["'self'", 'https:'],
+          frameAncestors: ["'self'"],
+        },
+      },
+      hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true,
+      },
+    }),
+  );
   app.use(
     cors({
       origin: appConfig.cors.origin,
@@ -36,8 +61,18 @@ export function createApp(): Application {
   app.use(compression());
 
   // --- Body parsing --------------------------------------------------------
-  app.use(express.json({ limit: '2mb' }));
+  app.use(
+    express.json({
+      limit: '2mb',
+      verify: (req: any, _res, buf) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
   app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+
+  // --- Input Sanitization & Injection Defense ------------------------------
+  app.use(sanitizeInputsMiddleware);
 
   // --- Observability ---------------------------------------------------
   app.use(httpLogger);

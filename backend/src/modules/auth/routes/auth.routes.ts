@@ -1,4 +1,4 @@
-import { rateLimit, requireAuth, validate } from '@common/middlewares';
+import { authRateLimit, requireAuth, validate } from '@common/middlewares';
 import { asyncHandler } from '@shared/utils';
 import { Router } from 'express';
 
@@ -10,25 +10,7 @@ import {
   registerSchema,
 } from '../validators/auth.schema';
 
-const router = Router();
-
-/**
- * Stricter rate limits on the abuse-prone, unauthenticated endpoints
- * (Backend Specification §9 — "stricter limits on authentication
- * endpoints... to prevent abuse"). Kept simple/in-memory for MVP scale —
- * see `rateLimit`'s own doc comment for the future Redis-backed path.
- */
-const authAttemptLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: 'Too many attempts — please try again in a few minutes',
-});
-
-const registerLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 10,
-  message: 'Too many registration attempts — please try again later',
-});
+const router: Router = Router();
 
 /**
  * POST /api/v1/auth/register
@@ -36,7 +18,7 @@ const registerLimiter = rateLimit({
  */
 router.post(
   '/register',
-  registerLimiter,
+  authRateLimit,
   validate({ body: registerSchema }),
   asyncHandler(authController.register),
 );
@@ -47,7 +29,7 @@ router.post(
  */
 router.post(
   '/login',
-  authAttemptLimiter,
+  authRateLimit,
   validate({ body: loginSchema }),
   asyncHandler(authController.login),
 );
@@ -59,7 +41,7 @@ router.post(
  */
 router.post(
   '/refresh',
-  authAttemptLimiter,
+  authRateLimit,
   validate({ body: refreshTokenSchema }),
   asyncHandler(authController.refresh),
 );

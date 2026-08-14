@@ -60,6 +60,7 @@ model User {
   assignedConversations Conversation[]    @relation("ConversationAssignedUser")
   uploadedDocuments      Document[]        @relation("DocumentUploadedBy")
   connectedIntegrations  Integration[]     @relation("IntegrationConnectedBy")
+  auditLogs              AuditLog[]
 
   @@map("users")
 }
@@ -113,6 +114,9 @@ model Workspace {
   documents           Document[]
   integrations        Integration[]
   notifications       Notification[]
+  followUps           FollowUp[]
+  analyticsEvents     AnalyticsEvent[]
+  auditLogs           AuditLog[]
 
   @@index([organizationId])
   @@map("workspaces")
@@ -189,6 +193,7 @@ model Customer {
   lead          Lead?
   conversations Conversation[]
   appointments  Appointment[]
+  followUps     FollowUp[]
 
   @@index([workspaceId])
   @@index([workspaceId, email])
@@ -217,6 +222,7 @@ model Lead {
 
   conversations Conversation[]
   appointments  Appointment[]
+  followUps     FollowUp[]
 
   @@index([workspaceId, status])
   @@index([aiEmployeeId])
@@ -250,7 +256,8 @@ model Conversation {
   integration  Integration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
   assignedUser User?        @relation("ConversationAssignedUser", fields: [assignedUserId], references: [id], onDelete: SetNull)
 
-  messages Message[]
+  messages  Message[]
+  followUps FollowUp[]
 
   @@index([workspaceId, status, lastMessageAt])
   @@index([customerId])
@@ -305,6 +312,7 @@ model Appointment {
   lead        Lead?        @relation(fields: [leadId], references: [id], onDelete: SetNull)
   aiEmployee  AIEmployee   @relation(fields: [aiEmployeeId], references: [id], onDelete: Restrict)
   integration Integration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+  followUps   FollowUp[]
 
   @@index([workspaceId, startTime])
   @@index([customerId])
@@ -408,3 +416,87 @@ model Notification {
   @@index([workspaceId, userId, readAt])
   @@map("notifications")
 }
+
+// ============================================================================
+// FOLLOW-UPS (Phase 7 — AI Follow-up Employee)
+// ============================================================================
+
+model FollowUp {
+  id               String    @id @default(uuid())
+  workspaceId      String    @map("workspace_id")
+  aiEmployeeId     String?   @map("ai_employee_id")
+  leadId           String?   @map("lead_id")
+  customerId       String?   @map("customer_id")
+  conversationId   String?   @map("conversation_id")
+  appointmentId    String?   @map("appointment_id")
+  triggerType      String    @map("trigger_type")
+  status           String    @default("PENDING")
+  scheduledAt      DateTime? @map("scheduled_at")
+  attemptCount     Int       @default(0) @map("attempt_count")
+  lastMessageSent  String?   @map("last_message_sent")
+  optedOut         Boolean   @default(false) @map("opted_out")
+  stopReason       String?   @map("stop_reason")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  lead         Lead?         @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  customer     Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  appointment  Appointment?  @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, scheduledAt])
+  @@index([leadId])
+  @@index([customerId])
+  @@map("follow_ups")
+}
+
+// ============================================================================
+// ANALYTICS & METRICS
+// ============================================================================
+
+model AnalyticsEvent {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  eventType   String   @map("event_type")
+  agentType   String?  @map("agent_type")
+  channel     String?
+  metadata    String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+
+  @@index([workspaceId, eventType, createdAt])
+  @@index([workspaceId, agentType])
+  @@map("analytics_events")
+}
+
+// ============================================================================
+// AUDIT LOGGING (Phase 10)
+// ============================================================================
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  workspaceId String?  @map("workspace_id")
+  userId      String?  @map("user_id")
+  action      String
+  resource    String
+  resourceId  String?  @map("resource_id")
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  changes     String?  @map("changes")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([userId])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+

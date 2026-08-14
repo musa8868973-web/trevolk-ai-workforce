@@ -1,4 +1,4 @@
-import type { Request, Response } from 'express';
+import type { Request, Response, RequestHandler } from 'express';
 import pinoHttp from 'pino-http';
 
 import { logger } from './logger';
@@ -7,7 +7,7 @@ import { logger } from './logger';
  * Express middleware that logs every incoming request/outgoing response,
  * correlated by the request ID attached by the `requestId` middleware.
  */
-export const httpLogger = pinoHttp({
+export const httpLogger: RequestHandler = pinoHttp({
   logger,
   genReqId: (req: Request, res: Response) => {
     const existing = res.getHeader('X-Request-Id');

@@ -16,7 +16,7 @@ import {
   workspaceIdParamSchema,
 } from '../validators/workspace.schema';
 
-const router = Router();
+const router: Router = Router();
 
 /**
  * Workspace + team-member endpoints (Backend Specification §5.2, §6.2–6.3;

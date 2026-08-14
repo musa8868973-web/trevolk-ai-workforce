@@ -1,0 +1,65 @@
+# Dependencies
+node_modules/
+*/node_modules/
+.pnp
+.pnp.js
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+!*.env.example
+!.env.example
+
+# Build Outputs
+dist/
+*/dist/
+build/
+*/build/
+.output/
+.vinxi/
+.nitro/
+.wrangler/
+.dev.vars
+
+# Databases & Local SQLite
+*.db
+*.db-journal
+*.sqlite
+dev.db
+test.db
+prisma/*.db
+prisma/*.db-journal
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Testing & Coverage
+coverage/
+*/coverage/
+.nyc_output/
+
+# Backups & Archives
+*-backup/
+*-backup
+*.zip
+*.tar.gz
+
+# IDE & OS Files
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.sublime-project
+*.sublime-workspace

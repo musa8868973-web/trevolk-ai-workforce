@@ -56,6 +56,13 @@ export const envSchema = z.object({
   // Managed auth provider
   AUTH_PROVIDER: z.enum(['clerk', 'supabase']).default('clerk'),
   AUTH_PROVIDER_API_KEY: z.string().optional(),
+
+  // Integrations encryption key
+  INTEGRATION_ENCRYPTION_KEY: z.string().length(64, 'INTEGRATION_ENCRYPTION_KEY must be exactly 64 hex characters').optional(),
+
+  // System Emails
+  PROJECT_EMAIL: z.string().email().default('trevolk.official@gmail.com'),
+  DEFAULT_SYSTEM_EMAIL: z.string().email().default('trevolk.official@gmail.com'),
 });
 
 export type EnvSchema = z.infer<typeof envSchema>;

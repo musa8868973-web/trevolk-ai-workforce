@@ -5,7 +5,7 @@ import { Router } from 'express';
 import { organizationController } from '../controller/organization.controller';
 import { organizationIdParamSchema, updateOrganizationSchema } from '../validators/organization.schema';
 
-const router = Router();
+const router: Router = Router();
 
 /**
  * Organization/business endpoints (Phase 4 §2–3, §13).

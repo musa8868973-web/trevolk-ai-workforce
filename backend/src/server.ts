@@ -1,12 +1,19 @@
 import type { Server } from 'http';
 
 import { appConfig } from '@config/index';
+import { closeRedisConnection } from '@common/queues/redis.client';
 import { disconnectPrisma } from '@database/index';
 import { logger } from '@shared/logger';
 
 import { createApp } from './app';
+import { initializeIntegrationWorkers, closeIntegrationWorkers } from '@modules/integrations';
+import { initializeNotificationGateway, closeNotificationGateway } from '@modules/notifications';
+import { initializePhase9Workers, closePhase9Workers } from '@modules/jobs';
 
 const app = createApp();
+
+// Start background integration workers
+initializeIntegrationWorkers();
 
 const server: Server = app.listen(appConfig.app.port, () => {
   logger.info(
@@ -19,12 +26,16 @@ const server: Server = app.listen(appConfig.app.port, () => {
   );
 });
 
+// Initialize Socket.io Real-Time Notification Gateway attached to HTTP server
+initializeNotificationGateway(server);
+
+// Initialize Phase 9 Background Queue Workers & Cron Schedules
+initializePhase9Workers().catch((err) => {
+  logger.error({ err }, 'Failed to initialize Phase 9 background workers');
+});
+
 /**
- * Gracefully shuts the HTTP server down on termination signals, giving
- * in-flight requests a chance to finish before the process exits. Also
- * closes the Prisma connection pool so the process doesn't leave dangling
- * database connections behind. Future phases should extend this to also
- * close any background job queue connections (Redis/BullMQ).
+ * Gracefully shuts the HTTP server down on termination signals.
  */
 function gracefulShutdown(signal: string): void {
   logger.warn(`Received ${signal}. Starting graceful shutdown...`);
@@ -39,7 +50,15 @@ function gracefulShutdown(signal: string): void {
       .catch((prismaErr: unknown) => {
         logger.error({ err: prismaErr }, 'Error disconnecting Prisma client');
       })
-      .finally(() => {
+      .finally(async () => {
+        try {
+          await closeNotificationGateway();
+          await closeIntegrationWorkers();
+          await closePhase9Workers();
+          await closeRedisConnection();
+        } catch (workerErr) {
+          logger.error({ err: workerErr }, 'Error closing background workers or gateway');
+        }
         logger.info('Server closed gracefully. Goodbye 👋');
         process.exit(0);
       });

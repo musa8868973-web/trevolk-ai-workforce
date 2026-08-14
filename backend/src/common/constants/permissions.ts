@@ -17,6 +17,17 @@ export const PERMISSIONS = {
   KNOWLEDGE_BASE_MANAGE: 'knowledge_base:manage',
   INTEGRATION_MANAGE: 'integration:manage',
   ANALYTICS_VIEW: 'analytics:view',
+  SALES_EMPLOYEE_MANAGE: 'sales_employee:manage',
+  SALES_EMPLOYEE_QUALIFY: 'sales_employee:qualify',
+  SALES_EMPLOYEE_BOOK: 'sales_employee:book',
+  SUPPORT_EMPLOYEE_MANAGE: 'support_employee:manage',
+  SUPPORT_EMPLOYEE_FAQ: 'support_employee:faq',
+  SUPPORT_EMPLOYEE_ORDER_LOOKUP: 'support_employee:order_lookup',
+  RECEPTIONIST_EMPLOYEE_MANAGE: 'receptionist_employee:manage',
+  RECEPTIONIST_EMPLOYEE_BOOK: 'receptionist_employee:book',
+  FOLLOWUP_EMPLOYEE_MANAGE: 'followup_employee:manage',
+  FOLLOWUP_EMPLOYEE_TRIGGER: 'followup_employee:trigger',
+
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -39,10 +50,17 @@ export const ROLE_PERMISSIONS: Record<WorkspaceRole, Permission[]> = {
   [WORKSPACE_ROLES.OWNER]: ALL_PERMISSIONS,
   [WORKSPACE_ROLES.ADMIN]: ALL_PERMISSIONS,
   [WORKSPACE_ROLES.TEAM_MEMBER]: [
+    PERMISSIONS.ANALYTICS_VIEW,
     PERMISSIONS.CONVERSATION_MANAGE,
     PERMISSIONS.LEAD_MANAGE,
     PERMISSIONS.CUSTOMER_MANAGE,
     PERMISSIONS.APPOINTMENT_MANAGE,
+    PERMISSIONS.SALES_EMPLOYEE_QUALIFY,
+    PERMISSIONS.SALES_EMPLOYEE_BOOK,
+    PERMISSIONS.SUPPORT_EMPLOYEE_FAQ,
+    PERMISSIONS.SUPPORT_EMPLOYEE_ORDER_LOOKUP,
+    PERMISSIONS.RECEPTIONIST_EMPLOYEE_BOOK,
+    PERMISSIONS.FOLLOWUP_EMPLOYEE_TRIGGER,
   ],
 };
 

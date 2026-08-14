@@ -1,4 +1,16 @@
--- CreateTable
+-- Baseline migration.
+--
+-- NOTE: the individual migration files for Phases 1-4 were not present in
+-- the Phase 4 project archive supplied for Phase 5A (only
+-- `migration_lock.toml` and the applied-migration history in
+-- `prisma/dev.db` survived). This file was reconstructed by introspecting
+-- the actual `prisma/dev.db` schema (which already matched
+-- `prisma/schema.prisma`, including `ai_employees`) rather than replayed
+-- from lost history, so it is consolidated into a single baseline rather
+-- than split into the original per-phase migrations. No data model
+-- changed as a result — this captures the schema exactly as it already
+-- existed, including the Phase 5A `ai_employees` table.
+
 CREATE TABLE "organizations" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "name" TEXT NOT NULL,
@@ -10,7 +22,6 @@ CREATE TABLE "organizations" (
     CONSTRAINT "organizations_owner_user_id_fkey" FOREIGN KEY ("owner_user_id") REFERENCES "users" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
--- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "email" TEXT NOT NULL,
@@ -21,9 +32,8 @@ CREATE TABLE "users" (
     "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" DATETIME NOT NULL,
     "deleted_at" DATETIME
-);
+, "password_hash" TEXT, "last_login_at" DATETIME);
 
--- CreateTable
 CREATE TABLE "workspaces" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "organization_id" TEXT NOT NULL,
@@ -38,7 +48,6 @@ CREATE TABLE "workspaces" (
     CONSTRAINT "workspaces_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
--- CreateTable
 CREATE TABLE "workspace_members" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "user_id" TEXT NOT NULL,
@@ -52,7 +61,6 @@ CREATE TABLE "workspace_members" (
     CONSTRAINT "workspace_members_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "workspaces" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
--- CreateTable
 CREATE TABLE "ai_employees" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "workspace_id" TEXT NOT NULL,
@@ -68,7 +76,6 @@ CREATE TABLE "ai_employees" (
     CONSTRAINT "ai_employees_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "workspaces" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
--- CreateTable
 CREATE TABLE "customers" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "workspace_id" TEXT NOT NULL,
@@ -84,7 +91,6 @@ CREATE TABLE "customers" (
     CONSTRAINT "customers_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "workspaces" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
--- CreateTable
 CREATE TABLE "leads" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "workspace_id" TEXT NOT NULL,
@@ -104,7 +110,6 @@ CREATE TABLE "leads" (
     CONSTRAINT "leads_assigned_user_id_fkey" FOREIGN KEY ("assigned_user_id") REFERENCES "users" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
--- CreateTable
 CREATE TABLE "conversations" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "workspace_id" TEXT NOT NULL,
@@ -127,7 +132,6 @@ CREATE TABLE "conversations" (
     CONSTRAINT "conversations_assigned_user_id_fkey" FOREIGN KEY ("assigned_user_id") REFERENCES "users" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
--- CreateTable
 CREATE TABLE "messages" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "conversation_id" TEXT NOT NULL,
@@ -143,7 +147,6 @@ CREATE TABLE "messages" (
     CONSTRAINT "messages_conversation_id_fkey" FOREIGN KEY ("conversation_id") REFERENCES "conversations" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
--- CreateTable
 CREATE TABLE "appointments" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "workspace_id" TEXT NOT NULL,
@@ -166,7 +169,6 @@ CREATE TABLE "appointments" (
     CONSTRAINT "appointments_integration_id_fkey" FOREIGN KEY ("integration_id") REFERENCES "integrations" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
--- CreateTable
 CREATE TABLE "knowledge_base_entries" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "workspace_id" TEXT NOT NULL,
@@ -183,7 +185,6 @@ CREATE TABLE "knowledge_base_entries" (
     CONSTRAINT "knowledge_base_entries_document_id_fkey" FOREIGN KEY ("document_id") REFERENCES "documents" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
--- CreateTable
 CREATE TABLE "documents" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "workspace_id" TEXT NOT NULL,
@@ -198,7 +199,6 @@ CREATE TABLE "documents" (
     CONSTRAINT "documents_uploaded_by_user_id_fkey" FOREIGN KEY ("uploaded_by_user_id") REFERENCES "users" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
--- CreateTable
 CREATE TABLE "integrations" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "workspace_id" TEXT NOT NULL,
@@ -214,7 +214,6 @@ CREATE TABLE "integrations" (
     CONSTRAINT "integrations_connected_by_user_id_fkey" FOREIGN KEY ("connected_by_user_id") REFERENCES "users" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
--- CreateTable
 CREATE TABLE "notifications" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "workspace_id" TEXT NOT NULL,
@@ -231,77 +230,66 @@ CREATE TABLE "notifications" (
     CONSTRAINT "notifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
--- CreateIndex
+CREATE TABLE "refresh_tokens" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "user_id" TEXT NOT NULL,
+    "expires_at" DATETIME NOT NULL,
+    "revoked_at" DATETIME,
+    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "refresh_tokens_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
 CREATE INDEX "organizations_owner_user_id_idx" ON "organizations"("owner_user_id");
 
--- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
--- CreateIndex
 CREATE UNIQUE INDEX "users_auth_provider_id_key" ON "users"("auth_provider_id");
 
--- CreateIndex
 CREATE INDEX "workspaces_organization_id_idx" ON "workspaces"("organization_id");
 
--- CreateIndex
 CREATE INDEX "workspace_members_workspace_id_idx" ON "workspace_members"("workspace_id");
 
--- CreateIndex
 CREATE UNIQUE INDEX "workspace_members_user_id_workspace_id_key" ON "workspace_members"("user_id", "workspace_id");
 
--- CreateIndex
 CREATE INDEX "ai_employees_workspace_id_idx" ON "ai_employees"("workspace_id");
 
--- CreateIndex
 CREATE UNIQUE INDEX "ai_employees_workspace_id_employee_type_key" ON "ai_employees"("workspace_id", "employee_type");
 
--- CreateIndex
 CREATE INDEX "customers_workspace_id_idx" ON "customers"("workspace_id");
 
--- CreateIndex
 CREATE INDEX "customers_workspace_id_email_idx" ON "customers"("workspace_id", "email");
 
--- CreateIndex
 CREATE UNIQUE INDEX "leads_customer_id_key" ON "leads"("customer_id");
 
--- CreateIndex
 CREATE INDEX "leads_workspace_id_status_idx" ON "leads"("workspace_id", "status");
 
--- CreateIndex
 CREATE INDEX "leads_ai_employee_id_idx" ON "leads"("ai_employee_id");
 
--- CreateIndex
 CREATE INDEX "conversations_workspace_id_status_last_message_at_idx" ON "conversations"("workspace_id", "status", "last_message_at");
 
--- CreateIndex
 CREATE INDEX "conversations_customer_id_idx" ON "conversations"("customer_id");
 
--- CreateIndex
 CREATE INDEX "conversations_lead_id_idx" ON "conversations"("lead_id");
 
--- CreateIndex
 CREATE INDEX "conversations_ai_employee_id_idx" ON "conversations"("ai_employee_id");
 
--- CreateIndex
 CREATE INDEX "messages_conversation_id_sent_at_idx" ON "messages"("conversation_id", "sent_at");
 
--- CreateIndex
 CREATE INDEX "appointments_workspace_id_start_time_idx" ON "appointments"("workspace_id", "start_time");
 
--- CreateIndex
 CREATE INDEX "appointments_customer_id_idx" ON "appointments"("customer_id");
 
--- CreateIndex
 CREATE INDEX "knowledge_base_entries_workspace_id_is_active_idx" ON "knowledge_base_entries"("workspace_id", "is_active");
 
--- CreateIndex
 CREATE INDEX "documents_workspace_id_idx" ON "documents"("workspace_id");
 
--- CreateIndex
 CREATE INDEX "integrations_workspace_id_status_idx" ON "integrations"("workspace_id", "status");
 
--- CreateIndex
 CREATE UNIQUE INDEX "integrations_workspace_id_provider_key" ON "integrations"("workspace_id", "provider");
 
--- CreateIndex
 CREATE INDEX "notifications_workspace_id_user_id_read_at_idx" ON "notifications"("workspace_id", "user_id", "read_at");
+
+CREATE INDEX "refresh_tokens_user_id_idx" ON "refresh_tokens"("user_id");
+
+CREATE INDEX "refresh_tokens_expires_at_idx" ON "refresh_tokens"("expires_at");
+

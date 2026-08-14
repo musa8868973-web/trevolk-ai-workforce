@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: trevolk_backend_prod
+    restart: always
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - API_PREFIX=/api/v1
+      - APP_NAME=trevolk-ai-workforce-backend
+      - LOG_LEVEL=info
+      - CORS_ORIGIN=https://app.trevolk.com
+      - DATABASE_URL=postgresql://trevolk_user:trevolk_secure_pass@postgres:5432/trevolk_db?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-production_super_secret_jwt_key_minimum_32_chars_long}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-production_super_secret_refresh_jwt_key_minimum_32_chars}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - trevolk_network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: trevolk_postgres_prod
+    restart: always
+    environment:
+      POSTGRES_DB: trevolk_db
+      POSTGRES_USER: trevolk_user
+      POSTGRES_PASSWORD: trevolk_secure_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trevolk_user -d trevolk_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - trevolk_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: trevolk_redis_prod
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - trevolk_network
+
+networks:
+  trevolk_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
