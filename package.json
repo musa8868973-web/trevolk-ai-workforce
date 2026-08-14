@@ -1,8 +1,0 @@
-{
-  "name": "trevolk-ai-workforce",
-  "private": true,
-  "scripts": {
-    "install": "cd Frontend && npm install",
-    "build": "cd Frontend && npm run build"
-  }
-}
