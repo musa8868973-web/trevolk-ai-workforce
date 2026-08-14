@@ -1,6 +1,6 @@
 // ============================================================================
 // Trevolk AI Workforce — Prisma Schema (Phase 2: Database Layer)
-// SQLite-compatible version (no native enums, no native JSON)
+// PostgreSQL version (production-ready)
 // ============================================================================
 
 generator client {
@@ -8,7 +8,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
