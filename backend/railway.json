@@ -4,7 +4,7 @@
         "builder": "RAILPACK"
     },
     "deploy": {
-        "startCommand": "npx prisma db push && node dist/server.js",
+        "startCommand": "npx prisma db push --accept-data-loss && node dist/server.js",
         "healthcheckPath": "/api/v1/health",
         "healthcheckTimeout": 100,
         "restartPolicyType": "ON_FAILURE",

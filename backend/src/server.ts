@@ -10,26 +10,37 @@ import { initializeIntegrationWorkers, closeIntegrationWorkers } from '@modules/
 import { initializeNotificationGateway, closeNotificationGateway } from '@modules/notifications';
 import { initializePhase9Workers, closePhase9Workers } from '@modules/jobs';
 
+logger.info(`Booting ${appConfig.app.name} on port ${appConfig.app.port}...`);
+
 const app = createApp();
 
-// Start background integration workers
-initializeIntegrationWorkers();
-
-const server: Server = app.listen(appConfig.app.port, () => {
+// Start HTTP server FIRST on 0.0.0.0 so health check probe passes immediately
+const server: Server = app.listen(appConfig.app.port, '0.0.0.0', () => {
   logger.info(
     {
       port: appConfig.app.port,
       env: appConfig.env,
       apiPrefix: appConfig.app.apiPrefix,
     },
-    `🚀 ${appConfig.app.name} listening on port ${appConfig.app.port} [${appConfig.env}]`,
+    `🚀 ${appConfig.app.name} listening on 0.0.0.0:${appConfig.app.port} [${appConfig.env}]`,
   );
 });
 
 // Initialize Socket.io Real-Time Notification Gateway attached to HTTP server
-initializeNotificationGateway(server);
+try {
+  initializeNotificationGateway(server);
+} catch (err) {
+  logger.error({ err }, 'Failed to initialize Notification Gateway');
+}
 
-// Initialize Phase 9 Background Queue Workers & Cron Schedules
+// Start background integration workers safely after server is listening
+try {
+  initializeIntegrationWorkers();
+} catch (err) {
+  logger.error({ err }, 'Failed to initialize Integration Workers');
+}
+
+// Initialize Phase 9 Background Queue Workers & Cron Schedules safely
 initializePhase9Workers().catch((err) => {
   logger.error({ err }, 'Failed to initialize Phase 9 background workers');
 });
