@@ -50,6 +50,7 @@ export const genericWebhookProvider = {
 
             // If a secret is defined, attach an HMAC signature for authenticity verification by receiver
             if (sub.secret) {
+              // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
               const crypto = require('node:crypto');
               const hmac = crypto.createHmac('sha256', sub.secret);
               hmac.update(body);

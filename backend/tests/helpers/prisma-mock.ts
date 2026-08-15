@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 
 /**
  * Minimal in-memory stand-in for the subset of `PrismaClient` used across test suites.
@@ -686,7 +686,7 @@ export function createPrismaMock() {
 
     integration: {
       create: async ({ data }: any) => {
-        const id = require('crypto').randomUUID();
+        const id = randomUUID();
         const now = new Date();
         const integration = {
           id,
@@ -760,7 +760,7 @@ export function createPrismaMock() {
           Object.assign(integration, update, { updatedAt: now });
           return integration;
         } else {
-          const id = require('crypto').randomUUID();
+          const id = randomUUID();
           const newIntegration = {
             id,
             workspaceId: create.workspaceId,
@@ -793,7 +793,7 @@ export function createPrismaMock() {
 
     notification: {
       create: async ({ data }: any) => {
-        const id = require('crypto').randomUUID();
+        const id = randomUUID();
         const now = new Date();
         const notification = {
           id,

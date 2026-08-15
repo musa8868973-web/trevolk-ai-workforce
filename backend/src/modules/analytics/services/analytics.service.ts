@@ -97,7 +97,9 @@ export const analyticsService = {
             csatSum += meta.rating;
             csatCount++;
           }
-        } catch {}
+        } catch {
+          // Ignore parse errors
+        }
       }
     }
     const csatScore = csatCount > 0 ? Number((csatSum / csatCount).toFixed(2)) : 4.8; // default benchmark
@@ -122,7 +124,9 @@ export const analyticsService = {
             totalRevenue += answers.dealValue;
             continue;
           }
-        } catch {}
+        } catch {
+          // Ignore parse errors
+        }
       }
       totalRevenue += 500; // default average contract value baseline
     }
@@ -296,7 +300,9 @@ export const analyticsService = {
           agentBreakdown[agentKey]!.tokens += sumTokens;
           agentBreakdown[agentKey]!.cost += estimatedCost;
           agentBreakdown[agentKey]!.calls += 1;
-        } catch {}
+        } catch {
+          // Ignore parse errors
+        }
       }
     }
 

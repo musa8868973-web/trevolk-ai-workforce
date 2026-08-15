@@ -99,7 +99,7 @@ export const stripeProvider = {
       throw new Error('Stripe integration not configured for this workspace');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
     const Stripe = require('stripe') as typeof import('stripe');
     const stripe = new Stripe(apiKey, { apiVersion: '2023-10-16' as any });
 

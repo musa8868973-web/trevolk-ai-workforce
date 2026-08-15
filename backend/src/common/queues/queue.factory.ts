@@ -39,7 +39,7 @@ export function getQueue(name: QueueName): AnyQueue {
   if (_queues.has(name)) return _queues.get(name)!;
 
   // Lazy-load BullMQ so import doesn't fail when Redis isn't available
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
   const { Queue } = require('bullmq') as typeof import('bullmq');
   const connection = getRedisConnection();
   const q = new Queue(name, { connection, defaultJobOptions: DEFAULT_JOB_OPTIONS });

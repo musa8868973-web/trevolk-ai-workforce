@@ -40,7 +40,7 @@ setInterval(() => {
 
 function safeLogWarn(meta: object, msg: string): void {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
     const { logger } = require('@shared/logger');
     logger.warn(meta, msg);
   } catch {
@@ -50,7 +50,7 @@ function safeLogWarn(meta: object, msg: string): void {
 
 function safeLogError(meta: object, msg: string): void {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
     const { logger } = require('@shared/logger');
     logger.error(meta, msg);
   } catch {

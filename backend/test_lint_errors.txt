@@ -1,0 +1,13 @@
+
+C:\Users\IDR\trevolk-ai-workforce\backend\tests\helpers\prisma-mock.ts
+  689:20  error  Require statement not part of import statement  @typescript-eslint/no-var-requires
+  763:22  error  Require statement not part of import statement  @typescript-eslint/no-var-requires
+  796:20  error  Require statement not part of import statement  @typescript-eslint/no-var-requires
+
+C:\Users\IDR\trevolk-ai-workforce\backend\tests\integration\integrations.spec.ts
+    6:32  error  Require statement not part of import statement  @typescript-eslint/no-var-requires
+   58:10  error  'authed' is defined but never used              @typescript-eslint/no-unused-vars
+  359:22  error  Require statement not part of import statement  @typescript-eslint/no-var-requires
+
+✖ 6 problems (6 errors, 0 warnings)
+

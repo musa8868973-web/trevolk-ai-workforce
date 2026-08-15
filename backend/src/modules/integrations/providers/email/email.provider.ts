@@ -185,7 +185,7 @@ export const emailProvider = {
     message: EmailMessage,
   ): Promise<void> {
     // Lazy-load nodemailer to avoid issues when not installed
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
     const nodemailer = require('nodemailer') as typeof import('nodemailer');
 
     const transporter = nodemailer.createTransport({

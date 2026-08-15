@@ -25,7 +25,7 @@ export async function initializePhase9Workers(): Promise<void> {
   }
 
   // Lazy-load BullMQ Worker
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
   const { Worker } = require('bullmq') as typeof import('bullmq');
   const connection = getRedisConnection();
 

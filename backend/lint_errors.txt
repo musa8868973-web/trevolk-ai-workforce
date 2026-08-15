@@ -1,0 +1,34 @@
+
+C:\Users\IDR\trevolk-ai-workforce\backend\src\common\middlewares\rate-limit.middleware.ts
+  44:24  error  Require statement not part of import statement  @typescript-eslint/no-var-requires
+  54:24  error  Require statement not part of import statement  @typescript-eslint/no-var-requires
+
+C:\Users\IDR\trevolk-ai-workforce\backend\src\common\queues\queue.factory.ts
+  43:21  error  Require statement not part of import statement  @typescript-eslint/no-var-requires
+
+C:\Users\IDR\trevolk-ai-workforce\backend\src\common\queues\redis.client.ts
+  25:17  error  Require statement not part of import statement  @typescript-eslint/no-var-requires
+
+C:\Users\IDR\trevolk-ai-workforce\backend\src\modules\analytics\services\analytics.service.ts
+  100:17  error  Empty block statement  no-empty
+  125:17  error  Empty block statement  no-empty
+  299:17  error  Empty block statement  no-empty
+
+C:\Users\IDR\trevolk-ai-workforce\backend\src\modules\integrations\jobs\integration-workers.ts
+  202:24  error  Require statement not part of import statement  @typescript-eslint/no-var-requires
+  417:28  error  Require statement not part of import statement  @typescript-eslint/no-var-requires
+
+C:\Users\IDR\trevolk-ai-workforce\backend\src\modules\integrations\providers\email\email.provider.ts
+  189:24  error  Require statement not part of import statement  @typescript-eslint/no-var-requires
+
+C:\Users\IDR\trevolk-ai-workforce\backend\src\modules\integrations\providers\generic\generic-webhook.provider.ts
+  53:30  error  Require statement not part of import statement  @typescript-eslint/no-var-requires
+
+C:\Users\IDR\trevolk-ai-workforce\backend\src\modules\integrations\providers\stripe\stripe.provider.ts
+  103:20  error  Require statement not part of import statement  @typescript-eslint/no-var-requires
+
+C:\Users\IDR\trevolk-ai-workforce\backend\src\modules\jobs\phase9-workers.ts
+  29:22  error  Require statement not part of import statement  @typescript-eslint/no-var-requires
+
+✖ 13 problems (13 errors, 0 warnings)
+

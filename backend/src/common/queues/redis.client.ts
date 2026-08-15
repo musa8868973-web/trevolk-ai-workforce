@@ -21,7 +21,7 @@ export function getRedisConnection(): InstanceType<typeof import('ioredis').defa
   }
 
   // Lazy-load to avoid import errors when running tests without Redis
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
   const Redis = require('ioredis') as typeof import('ioredis').default;
 
   const opts: RedisOptions = {

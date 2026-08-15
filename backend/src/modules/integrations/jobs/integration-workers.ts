@@ -198,7 +198,7 @@ export function initializeIntegrationWorkers(): void {
 
   try {
     // Lazy load BullMQ
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
     const { Worker } = require('bullmq') as typeof import('bullmq');
     const connection = getRedisConnection();
 
@@ -414,6 +414,7 @@ export function initializeIntegrationWorkers(): void {
           const customerId = subscription.customer;
 
           try {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
             const Stripe = require('stripe');
             const credentials = await credentialService.getCredentials(workspaceId, 'stripe');
             const stripe = new Stripe(credentials.apiKey!, { apiVersion: '2023-10-16' });
