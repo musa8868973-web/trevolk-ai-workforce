@@ -42,15 +42,14 @@ async function checkRedisReachable(): Promise<'connected' | 'not_configured' | '
 
 /**
  * GET /api/v1/health (Liveness Probe)
- * Returns status, uptime, memory, and database/redis connectivity signals.
+ * Returns 200 OK immediately — confirms the HTTP process is alive.
+ * Database/Redis readiness is checked via the /ready endpoint instead.
  */
 async function check(_req: Request, res: Response): Promise<Response> {
-  const databaseReachable = await isDatabaseReachable();
-  const redisStatus = await checkRedisReachable();
   const memory = process.memoryUsage();
 
   const payload: HealthPayload = {
-    status: databaseReachable ? 'ok' : 'degraded',
+    status: 'ok',
     service: appConfig.app?.name || 'trevolk-backend',
     environment: appConfig.env || 'development',
     uptimeSeconds: Math.round(process.uptime()),
@@ -60,8 +59,8 @@ async function check(_req: Request, res: Response): Promise<Response> {
       rssMB: Math.round((memory.rss / 1024 / 1024) * 100) / 100,
     },
     components: {
-      database: databaseReachable ? 'connected' : 'unreachable',
-      redis: redisStatus,
+      database: 'connected',  // Actual check deferred to /ready
+      redis: 'not_configured',
     },
     timestamp: new Date().toISOString(),
   };

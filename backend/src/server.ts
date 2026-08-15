@@ -10,39 +10,53 @@ import { initializeIntegrationWorkers, closeIntegrationWorkers } from '@modules/
 import { initializeNotificationGateway, closeNotificationGateway } from '@modules/notifications';
 import { initializePhase9Workers, closePhase9Workers } from '@modules/jobs';
 
-logger.info(`Booting ${appConfig.app.name} on port ${appConfig.app.port}...`);
+logger.info(`[BOOT] Starting ${appConfig.app.name}...`);
+logger.info(`[BOOT] PORT=${appConfig.app.port}, NODE_ENV=${appConfig.env}, API_PREFIX=${appConfig.app.apiPrefix}`);
 
-const app = createApp();
+let server: Server;
 
-// Start HTTP server FIRST on 0.0.0.0 so health check probe passes immediately
-const server: Server = app.listen(appConfig.app.port, '0.0.0.0', () => {
-  logger.info(
-    {
-      port: appConfig.app.port,
-      env: appConfig.env,
-      apiPrefix: appConfig.app.apiPrefix,
-    },
-    `🚀 ${appConfig.app.name} listening on 0.0.0.0:${appConfig.app.port} [${appConfig.env}]`,
-  );
-});
+try {
+  const app = createApp();
+  logger.info('[BOOT] Express app created successfully');
+
+  // Start HTTP server FIRST on 0.0.0.0 so health check probe passes immediately
+  server = app.listen(Number(appConfig.app.port), '0.0.0.0', () => {
+    logger.info(
+      {
+        port: appConfig.app.port,
+        env: appConfig.env,
+        apiPrefix: appConfig.app.apiPrefix,
+      },
+      `🚀 ${appConfig.app.name} listening on 0.0.0.0:${appConfig.app.port} [${appConfig.env}]`,
+    );
+  });
+
+  server.on('error', (err) => {
+    logger.error({ err }, '[BOOT] HTTP server error event fired');
+    process.exit(1);
+  });
+} catch (err) {
+  logger.error({ err }, '[BOOT] FATAL — failed to create Express app or start HTTP server');
+  process.exit(1);
+}
 
 // Initialize Socket.io Real-Time Notification Gateway attached to HTTP server
 try {
   initializeNotificationGateway(server);
 } catch (err) {
-  logger.error({ err }, 'Failed to initialize Notification Gateway');
+  logger.error({ err }, 'Failed to initialize Notification Gateway (non-fatal, continuing)');
 }
 
 // Start background integration workers safely after server is listening
 try {
   initializeIntegrationWorkers();
 } catch (err) {
-  logger.error({ err }, 'Failed to initialize Integration Workers');
+  logger.error({ err }, 'Failed to initialize Integration Workers (non-fatal, continuing)');
 }
 
 // Initialize Phase 9 Background Queue Workers & Cron Schedules safely
 initializePhase9Workers().catch((err) => {
-  logger.error({ err }, 'Failed to initialize Phase 9 background workers');
+  logger.error({ err }, 'Failed to initialize Phase 9 background workers (non-fatal, continuing)');
 });
 
 /**
