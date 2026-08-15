@@ -8,6 +8,7 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat openssl
 
 COPY package.json package-lock.json ./
+COPY prisma ./prisma
 RUN npm ci
 
 # --- Stage 2: Builder ---------------------------------------------------------
