@@ -3,7 +3,7 @@ builder = "RAILPACK"
 buildCommand = "npm run build"
 
 [deploy]
-startCommand = "npx prisma db push --accept-data-loss && node dist/bootstrap.js"
+startCommand = "echo '[DIAG] Running migrations...' && npx prisma db push --accept-data-loss && echo '[DIAG] Migrations done. Starting server...' && ls -la dist/bootstrap.js && echo '[DIAG] bootstrap.js found. Running...' && node dist/bootstrap.js"
 healthcheckPath = "/api/v1/health"
 healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
