@@ -3,7 +3,7 @@ builder = "NIXPACKS"
 buildCommand = "npm run build"
 
 [deploy]
-startCommand = "echo '[DIAG] Starting...' && npx prisma db push --accept-data-loss && echo '[DIAG] Migrations done' && node dist/bootstrap.js"
+startCommand = "npx prisma db push --accept-data-loss && node dist/bootstrap.js"
 healthcheckPath = "/api/v1/health"
 healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
