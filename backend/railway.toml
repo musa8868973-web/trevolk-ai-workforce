@@ -3,7 +3,7 @@ builder = "RAILPACK"
 buildCommand = "npm run build"
 
 [deploy]
-startCommand = "npx prisma db push --accept-data-loss && node dist/server.js"
+startCommand = "npx prisma db push --accept-data-loss && node dist/bootstrap.js"
 healthcheckPath = "/api/v1/health"
 healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"

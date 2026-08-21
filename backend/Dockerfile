@@ -45,4 +45,4 @@ EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-4000}/api/v1/health || exit 1
 
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/bootstrap.js"]

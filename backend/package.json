@@ -6,8 +6,8 @@
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
-    "start": "node dist/server.js",
-    "start:prod": "prisma db push && node dist/server.js",
+    "start": "node dist/bootstrap.js",
+    "start:prod": "prisma db push && node dist/bootstrap.js",
     "postinstall": "prisma generate",
     "dev": "nodemon --watch src --ext ts --exec ts-node -r tsconfig-paths/register src/server.ts",
     "test": "jest --runInBand",
