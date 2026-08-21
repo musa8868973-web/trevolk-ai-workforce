@@ -15,7 +15,7 @@ export const appConfig = {
 
   app: {
     name: env.APP_NAME,
-    port: env.PORT,
+    port: Number(env.PORT) || 3000,
     apiPrefix: env.API_PREFIX,
   },
 
